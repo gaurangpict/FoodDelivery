@@ -1,0 +1,152 @@
+{% extends "base.html" %}
+{% block title %}Order Confirmed{% endblock %}
+
+{% block content %}
+<div class="confirmation-page">
+    <div class="confirmation-card">
+        <!-- Header -->
+        <div class="confirmation-header">
+            <div class="check-icon">✓</div>
+            <h1>Order Confirmed!</h1>
+            <p>{{ order.order_id }} — {{ order.timestamp }}</p>
+        </div>
+
+        <!-- Body -->
+        <div class="confirmation-body">
+            <!-- Order Details -->
+            <div class="order-details-grid">
+                <div class="order-detail">
+                    <div class="detail-label">Restaurant</div>
+                    <div class="detail-value">
+                        {% if order.restaurant %}
+                        {{ order.restaurant.image }} {{ order.restaurant.name }}
+                        {% else %}
+                        SmartBite Partner
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="order-detail">
+                    <div class="detail-label">Delivery Type</div>
+                    <div class="detail-value">
+                        {% if order.delivery_type == 'standard' %}
+                        📦 Standard (Batched)
+                        {% else %}
+                        ⚡ Urgent (Direct)
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="order-detail">
+                    <div class="detail-label">Payment</div>
+                    <div class="detail-value">
+                        {% if order.payment_method == 'cod' %}💵 Cash on Delivery
+                        {% elif order.payment_method == 'card' %}💳 Card
+                        {% else %}📱 UPI
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="order-detail">
+                    <div class="detail-label">Distance</div>
+                    <div class="detail-value">{{ order.distance_km }} km</div>
+                </div>
+            </div>
+
+            <!-- Items Ordered -->
+            <div class="bill-breakdown">
+                <h3>Items Ordered</h3>
+                {% for item in order.bill.order_items %}
+                <div class="bill-item">
+                    <span>{{ item.name }} × {{ item.quantity }}</span>
+                    <span>₹{{ "%.2f"|format(item.subtotal) }}</span>
+                </div>
+                {% endfor %}
+            </div>
+
+            <!-- Bill Breakdown -->
+            <div class="bill-breakdown">
+                <h3>Bill Breakdown</h3>
+                <div class="bill-item">
+                    <span>Item Total</span>
+                    <span>₹{{ "%.2f"|format(order.bill.item_total) }}</span>
+                </div>
+                <div class="bill-item">
+                    <span>Delivery Fee
+                        {% if order.is_batched %}
+                        <span class="badge badge-batch" style="margin-left: 6px;">BATCHED</span>
+                        {% endif %}
+                    </span>
+                    <span>₹{{ "%.2f"|format(order.bill.delivery_fee) }}</span>
+                </div>
+                <div class="bill-item">
+                    <span>GST on Food (5%)</span>
+                    <span>₹{{ "%.2f"|format(order.bill.food_gst) }}</span>
+                </div>
+                <div class="bill-item">
+                    <span>GST on Services (18%)</span>
+                    <span>₹{{ "%.2f"|format(order.bill.service_gst) }}</span>
+                </div>
+                {% if order.bill.total_discount > 0 %}
+                <div class="bill-item highlight">
+                    <span>Discount Applied</span>
+                    <span>-₹{{ "%.2f"|format(order.bill.total_discount) }}</span>
+                </div>
+                {% endif %}
+
+                <div class="bill-total">
+                    <span>Total Paid</span>
+                    <span>₹{{ "%.2f"|format(order.bill.final_total) }}</span>
+                </div>
+            </div>
+
+            <!-- Engine Info -->
+            <div class="engine-info">
+                <h4>SmartBite Pricing Engine</h4>
+                <div class="metric">
+                    <span>Demand Level</span>
+                    <span class="metric-value">{{ order.bill.demand_level|upper }}</span>
+                </div>
+                <div class="metric">
+                    <span>Smart Score</span>
+                    <span class="metric-value">{{ order.bill.smart_score }}</span>
+                </div>
+            </div>
+
+            <!-- ALNS Batch Results -->
+            {% if order.is_batched and order.batch_result %}
+            <div style="margin-top: 16px; padding: 16px; background: #e8f5e9; border-radius: 12px; text-align: left;">
+                <h4 style="font-size: 0.9rem; font-weight: 700; color: #2e7d32; margin-bottom: 10px;">✅ ALNS Batch Match Found!</h4>
+                <div style="font-size: 0.85rem; color: #1b5e20; margin-bottom: 6px;">Batched with order <strong>{{ order.matched_order.order_id }}</strong> from <strong>{{ order.matched_order.restaurant_name }}</strong></div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 10px;">
+                    <div style="padding: 8px; background: rgba(255,255,255,0.7); border-radius: 8px; text-align: center;">
+                        <div style="font-size: 1.2rem; font-weight: 700; color: #2e7d32;">{{ order.batch_result.fuel_saved_pct }}%</div>
+                        <div style="font-size: 0.7rem; color: #666;">Fuel Saved</div>
+                    </div>
+                    <div style="padding: 8px; background: rgba(255,255,255,0.7); border-radius: 8px; text-align: center;">
+                        <div style="font-size: 1.2rem; font-weight: 700; color: #2e7d32;">{{ order.batch_result.distance_saved_km }} km</div>
+                        <div style="font-size: 0.7rem; color: #666;">Distance Saved</div>
+                    </div>
+                    <div style="padding: 8px; background: rgba(255,255,255,0.7); border-radius: 8px; text-align: center;">
+                        <div style="font-size: 1.2rem; font-weight: 700; color: #1565c0;">{{ order.batch_result.feasibility_score }}</div>
+                        <div style="font-size: 0.7rem; color: #666;">Feasibility Score</div>
+                    </div>
+                    <div style="padding: 8px; background: rgba(255,255,255,0.7); border-radius: 8px; text-align: center;">
+                        <div style="font-size: 1.2rem; font-weight: 700; color: #e65100;">+{{ order.batch_result.time_increase_min }} min</div>
+                        <div style="font-size: 0.7rem; color: #666;">Extra Time</div>
+                    </div>
+                </div>
+                <div style="font-size: 0.78rem; color: #666; margin-top: 8px;">Route: {{ order.batch_result.individual_km }} km (separate) → {{ order.batch_result.combined_km }} km (combined)</div>
+            </div>
+            {% elif not order.is_batched and order.delivery_type == 'standard' %}
+            <div style="margin-top: 16px; padding: 12px; background: #fff3e0; border-radius: 8px; text-align: left; font-size: 0.85rem; color: #e65100;">
+                ⏳ No nearby order found for batching — added to pool. If another customer orders nearby within 2 min, your delivery will be batched and you'll receive a discount!
+            </div>
+            {% endif %}
+
+            <!-- Actions -->
+            <div style="margin-top: 24px; display: flex; gap: 12px; justify-content: center;">
+                <a href="{{ url_for('restaurants') }}" class="btn btn-primary">Order Again</a>
+                <a href="{{ url_for('home') }}" class="btn btn-outline">Back to Home</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

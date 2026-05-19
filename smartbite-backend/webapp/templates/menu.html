@@ -1,0 +1,91 @@
+{% extends "base.html" %}
+{% block title %}{{ restaurant.name }}{% endblock %}
+
+{% block content %}
+<div class="restaurant-page">
+    <!-- Restaurant Header -->
+    <div class="page-header" style="background: linear-gradient(135deg, #fff5f0 0%, #ffe8db 100%); padding-bottom: 24px;">
+        <div class="container">
+            <div style="display: flex; align-items: center; gap: 20px;">
+                <img src="{{ restaurant.image }}" alt="{{ restaurant.name }}" style="width: 80px; height: 80px; border-radius: 12px; object-fit: cover;">
+                <div>
+                    <h1 style="margin-bottom: 4px;">{{ restaurant.name }}</h1>
+                    <div class="restaurant-meta" style="margin-bottom: 8px;">
+                        <span class="rating"><span class="star">★</span> {{ restaurant.rating }}</span>
+                        <span>{{ restaurant.delivery_time }}</span>
+                        <span>{{ restaurant.cuisine }}</span>
+                    </div>
+                    <span class="restaurant-tag">{{ restaurant.menu|length }} items on the menu</span>
+                </div>
+            </div>
+
+            {% if cart_restaurant and cart_restaurant != restaurant.id %}
+            <div style="margin-top: 16px; padding: 12px; background: #fff3e0; border-radius: 8px; font-size: 0.85rem; color: #e65100;">
+                ⚠️ You have items from another restaurant in your cart. Adding items here will replace your current cart.
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Mini Map -->
+    <div style="padding: 0 20px;">
+        <div class="container">
+            <div id="restaurant-map" style="height: 200px; border-radius: 12px; overflow: hidden; border: 1px solid var(--gray-200); z-index: 1;"></div>
+        </div>
+    </div>
+
+    <!-- Menu -->
+    <div class="menu-section">
+        <div class="container">
+            {% for category in categories %}
+            <div class="menu-category" id="cat-{{ category|lower|replace(' ', '-') }}">
+                <h2>{{ category }}</h2>
+                <div class="menu-grid">
+                    {% for item in restaurant.menu %}
+                    {% if item.category == category %}
+                    <div class="menu-item" id="item-{{ item.id }}">
+                        <div class="menu-item-emoji"><img src="{{ item.image }}" alt="{{ item.name }}"></div>
+                        <div class="menu-item-info">
+                            <h4>
+                                {{ item.name }}
+                                {% if item.veg %}
+                                <span class="badge badge-veg">VEG</span>
+                                {% else %}
+                                <span class="badge badge-nonveg">NON-VEG</span>
+                                {% endif %}
+                            </h4>
+                            <div class="desc">{{ item.desc }}</div>
+                            <div class="price">₹{{ item.price }}</div>
+                        </div>
+                        <div class="menu-item-action">
+                            <button class="add-btn"
+                                    data-item-id="{{ item.id }}"
+                                    data-restaurant-id="{{ restaurant.id }}"
+                                    onclick="addToCart('{{ item.id }}', '{{ restaurant.id }}')">
+                                ADD
+                            </button>
+                        </div>
+                    </div>
+                    {% endif %}
+                    {% endfor %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    var lat = {{ restaurant.location.lat }}, lon = {{ restaurant.location.lon }};
+    var map = L.map('restaurant-map').setView([lat, lon], 15);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; OpenStreetMap', maxZoom: 18
+    }).addTo(map);
+    L.marker([lat, lon]).addTo(map)
+        .bindPopup('<strong>{{ restaurant.name }}</strong>').openPopup();
+});
+</script>
+{% endblock %}

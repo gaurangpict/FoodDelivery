@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}SmartBite{% endblock %} — Smart Food Delivery</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+</head>
+<body>
+    <!-- Navbar -->
+    <nav class="navbar">
+        <div class="container">
+            <a href="{{ url_for('home') }}" class="navbar-brand">
+                <img src="{{ url_for('static', filename='logo2.png') }}" alt="SmartBite" class="navbar-logo">
+            </a>
+            <ul class="navbar-links">
+                <li><a href="{{ url_for('home') }}" class="{% if request.endpoint == 'home' %}active{% endif %}"><span class="nav-text">Home</span></a></li>
+                <li><a href="{{ url_for('restaurants') }}" class="{% if request.endpoint in ['restaurants', 'menu'] %}active{% endif %}"><span class="nav-text">Restaurants</span></a></li>
+                <li><a href="{{ url_for('pool_page') }}" class="{% if request.endpoint == 'pool_page' %}active{% endif %}"><span class="nav-text">Live Pool</span></a></li>
+                <li>
+                    <a href="{{ url_for('cart') }}" class="cart-link">
+                        🛒 Cart
+                        <span class="cart-badge" id="cart-badge">{{ cart_count }}</span>
+                    </a>
+                </li>
+            </ul>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main>
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-brand"><img src="{{ url_for('static', filename='logo2.png') }}" alt="SmartBite" style="height: 32px;"></div>
+            <p>Smart delivery, smarter savings — powered by ALNS &amp; A* optimization</p>
+            <ul class="footer-links">
+                <li><a href="{{ url_for('home') }}">Home</a></li>
+                <li><a href="{{ url_for('restaurants') }}">Restaurants</a></li>
+                <li><a href="{{ url_for('cart') }}">Cart</a></li>
+            </ul>
+        </div>
+    </footer>
+
+    <!-- Toast Container -->
+    <div class="toast-container" id="toast-container"></div>
+
+    <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+    {% block scripts %}{% endblock %}
+</body>
+</html>

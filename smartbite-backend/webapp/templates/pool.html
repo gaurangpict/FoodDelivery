@@ -1,0 +1,126 @@
+{% extends "base.html" %}
+{% block title %}Live Order Pool{% endblock %}
+
+{% block content %}
+<div style="padding: 40px 20px;">
+    <div class="container">
+        <h1 style="font-size: 1.8rem; font-weight: 700; margin-bottom: 4px;">Live Order Pool</h1>
+        <p style="color: var(--gray-500); margin-bottom: 24px;">Real-time view of orders waiting for ALNS batch matching. Open multiple tabs to simulate different users.</p>
+
+        <!-- Map -->
+        <div id="pool-map" style="height: 400px; border-radius: 16px; overflow: hidden; border: 1px solid var(--gray-200); margin-bottom: 24px; z-index: 1;"></div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px;">
+            <!-- Waiting Orders -->
+            <div>
+                <h3 style="font-size: 1.1rem; font-weight: 700; margin-bottom: 12px;">
+                    <span style="display: inline-block; width: 10px; height: 10px; background: #FF6B35; border-radius: 50; margin-right: 6px;"></span>
+                    Waiting in Pool <span id="pool-count" style="color: var(--gray-500); font-weight: 400;">(0)</span>
+                </h3>
+                <div id="pool-orders" style="display: flex; flex-direction: column; gap: 8px;">
+                    <div style="padding: 20px; text-align: center; color: var(--gray-500); font-size: 0.9rem;">
+                        No orders in pool. Place a Standard order to add one!
+                    </div>
+                </div>
+            </div>
+
+            <!-- Batch History -->
+            <div>
+                <h3 style="font-size: 1.1rem; font-weight: 700; margin-bottom: 12px;">
+                    <span style="display: inline-block; width: 10px; height: 10px; background: #28a745; border-radius: 50; margin-right: 6px;"></span>
+                    Batch History
+                </h3>
+                <div id="batch-history" style="display: flex; flex-direction: column; gap: 8px;">
+                    <div style="padding: 20px; text-align: center; color: var(--gray-500); font-size: 0.9rem;">
+                        No batches yet. Two nearby Standard orders will trigger ALNS matching.
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- How to Demo -->
+        <div style="margin-top: 32px; padding: 20px; background: var(--white); border-radius: 12px; border: 1px solid var(--gray-200);">
+            <h3 style="font-size: 1rem; font-weight: 700; margin-bottom: 8px;">How to Demo ALNS Batching</h3>
+            <ol style="font-size: 0.9rem; color: var(--gray-700); padding-left: 20px; line-height: 1.8;">
+                <li>Open this app in <strong>two browser tabs</strong> (or use a normal + incognito window)</li>
+                <li>In <strong>Tab 1</strong>: Order from a restaurant (e.g., Pizzeria Downtown on FC Road) → Standard delivery → Place Order</li>
+                <li>The order enters the pool (visible on this page)</li>
+                <li>In <strong>Tab 2</strong>: Order from a <strong>nearby</strong> restaurant (e.g., Dragon Wok in Shivajinagar, ~1km away) → Standard delivery → Place Order</li>
+                <li>ALNS validates the combined route — if fuel savings ≥ 10% and delay ≤ 15 min, both orders are <strong>batched</strong> with a ₹15 delivery fee + discount!</li>
+            </ol>
+            <p style="font-size: 0.82rem; color: var(--gray-500); margin-top: 8px;">Pool timeout: 2 minutes. ALNS threshold: ≥10% fuel savings, ≤15 min delay, ≤0.5 km delivery radius.</p>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+var map, markers = [];
+
+function initMap() {
+    map = L.map('pool-map').setView([18.52, 73.86], 13);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; OpenStreetMap', maxZoom: 18
+    }).addTo(map);
+}
+
+function refreshPool() {
+    fetch('/api/pool').then(r => r.json()).then(data => {
+        // Clear markers
+        markers.forEach(m => map.removeLayer(m));
+        markers = [];
+
+        // Pool orders
+        var poolDiv = document.getElementById('pool-orders');
+        var poolCount = document.getElementById('pool-count');
+        var waiting = data.pool.filter(o => o.status === 'waiting');
+        poolCount.textContent = '(' + waiting.length + ')';
+
+        if (waiting.length === 0) {
+            poolDiv.innerHTML = '<div style="padding: 20px; text-align: center; color: var(--gray-500); font-size: 0.9rem;">No orders in pool. Place a Standard order to add one!</div>';
+        } else {
+            poolDiv.innerHTML = waiting.map(function(o) {
+                // Add map markers
+                var rMarker = L.marker([o.r_lat, o.r_lon]).addTo(map).bindPopup('🏪 ' + o.restaurant);
+                var dIcon = L.divIcon({
+                    html: '<div style="width:12px;height:12px;background:#FF6B35;border:2px solid white;border-radius:50%;box-shadow:0 0 4px rgba(0,0,0,0.3);"></div>',
+                    iconSize: [12,12], className: ''
+                });
+                var dMarker = L.marker([o.d_lat, o.d_lon], {icon: dIcon}).addTo(map).bindPopup('📍 ' + o.order_id);
+                var line = L.polyline([[o.r_lat,o.r_lon],[o.d_lat,o.d_lon]], {color:'#FF6B35', weight:2, dashArray:'6'}).addTo(map);
+                markers.push(rMarker, dMarker, line);
+
+                return '<div style="padding: 12px; background: var(--white); border-radius: 8px; border: 1px solid var(--gray-200);">' +
+                    '<div style="font-weight: 600; font-size: 0.9rem;">' + o.order_id + '</div>' +
+                    '<div style="font-size: 0.82rem; color: var(--gray-500);">' + o.restaurant + ' · ₹' + o.value + '</div>' +
+                    '<div style="font-size: 0.78rem; color: var(--gray-500);">' + o.items + '</div>' +
+                    '<div style="font-size: 0.75rem; color: var(--primary); margin-top: 4px;">⏳ Waiting ' + o.age_sec + 's</div>' +
+                '</div>';
+            }).join('');
+        }
+
+        // Batch history
+        var histDiv = document.getElementById('batch-history');
+        if (data.batches.length === 0) {
+            histDiv.innerHTML = '<div style="padding: 20px; text-align: center; color: var(--gray-500); font-size: 0.9rem;">No batches yet.</div>';
+        } else {
+            histDiv.innerHTML = data.batches.slice().reverse().map(function(b) {
+                return '<div style="padding: 12px; background: #e8f5e9; border-radius: 8px;">' +
+                    '<div style="font-weight: 600; font-size: 0.9rem; color: #2e7d32;">✅ Batch Matched</div>' +
+                    '<div style="font-size: 0.82rem;">' + b.order1 + ' + ' + b.order2 + '</div>' +
+                    '<div style="font-size: 0.82rem; color: var(--gray-700);">Fuel saved: ' + b.alns.fuel_saved_pct + '% · Distance saved: ' + b.alns.distance_saved_km + ' km · Score: ' + b.alns.feasibility_score + '</div>' +
+                    '<div style="font-size: 0.75rem; color: var(--gray-500);">at ' + b.timestamp + '</div>' +
+                '</div>';
+            }).join('');
+        }
+    }).catch(function(){});
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    initMap();
+    refreshPool();
+    setInterval(refreshPool, 3000); // Auto-refresh every 3 seconds
+});
+</script>
+{% endblock %}

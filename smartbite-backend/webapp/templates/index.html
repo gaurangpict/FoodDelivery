@@ -1,0 +1,108 @@
+{% extends "base.html" %}
+{% block title %}Home{% endblock %}
+
+{% block content %}
+<!-- Hero -->
+<section class="hero">
+    <div class="container">
+        <div class="hero-content">
+            <h1>Delicious Food,<br><span>Delivered Smart</span></h1>
+            <p>SmartBite uses AI-powered route optimization to batch nearby orders — saving you money on delivery and reducing environmental impact.</p>
+            <a href="{{ url_for('restaurants') }}" class="btn btn-primary btn-lg">
+                Explore Restaurants →
+            </a>
+        </div>
+        <div class="hero-visual">
+            <img src="https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=500&h=400&fit=crop" alt="Delicious food" style="border-radius: 16px; box-shadow: 0 8px 32px rgba(0,0,0,0.3);">
+        </div>
+    </div>
+</section>
+
+<!-- Features -->
+<section class="features">
+    <div class="container">
+        <div class="section-title">
+            <h2>Why SmartBite?</h2>
+            <p>Our intelligent delivery system saves you money while being kinder to the planet</p>
+        </div>
+        <div class="features-grid">
+            <div class="feature-card">
+                <div class="icon">⚡</div>
+                <h3>Fast Delivery</h3>
+                <p>Orders delivered in under 30 minutes with A* optimized routing for the fastest paths</p>
+            </div>
+            <div class="feature-card">
+                <div class="icon">💰</div>
+                <h3>Batch Discounts</h3>
+                <p>When your order is batched with a nearby customer, both get up to 8% discount on delivery</p>
+            </div>
+            <div class="feature-card">
+                <div class="icon">🧠</div>
+                <h3>Smart Pricing</h3>
+                <p>Dynamic pricing engine with demand-aware fees, smart scoring, and transparent billing</p>
+            </div>
+            <div class="feature-card">
+                <div class="icon">🌱</div>
+                <h3>Eco-Friendly</h3>
+                <p>ALNS-validated batching reduces fuel consumption by 35-45% per combined delivery</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- How It Works -->
+<section class="how-it-works">
+    <div class="container">
+        <div class="section-title">
+            <h2>How SmartBite Works</h2>
+            <p>Three simple steps to smart delivery</p>
+        </div>
+        <div class="steps">
+            <div class="step">
+                <div class="step-number">1</div>
+                <h3>Browse & Order</h3>
+                <p>Pick your favourite restaurant and add items to your cart</p>
+            </div>
+            <div class="step">
+                <div class="step-number">2</div>
+                <h3>Smart Matching</h3>
+                <p>Our engine checks for nearby orders that can share a delivery route</p>
+            </div>
+            <div class="step">
+                <div class="step-number">3</div>
+                <h3>Save & Enjoy</h3>
+                <p>Get your food fast with optimized routing — and pay less when batched!</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Featured Restaurants -->
+<section class="featured">
+    <div class="container">
+        <div class="section-title">
+            <h2>Popular Restaurants</h2>
+            <p>Top picks loved by customers near you</p>
+        </div>
+        <div class="restaurant-grid">
+            {% for r in featured %}
+            <a href="{{ url_for('menu', restaurant_id=r.id) }}" class="restaurant-card">
+                <div class="restaurant-card-image"><img src="{{ r.image }}" alt="{{ r.name }}"></div>
+                <div class="restaurant-card-body">
+                    <h3>{{ r.name }}</h3>
+                    <div class="restaurant-meta">
+                        <span class="rating"><span class="star">★</span> {{ r.rating }}</span>
+                        <span>{{ r.delivery_time }}</span>
+                        <span>{{ r.cuisine }}</span>
+                    </div>
+                    <span class="restaurant-tag">{{ r.cuisine }}</span>
+                </div>
+            </a>
+            {% endfor %}
+        </div>
+        <div style="text-align: center; margin-top: 36px;">
+            <a href="{{ url_for('restaurants') }}" class="btn btn-outline">View All Restaurants →</a>
+        </div>
+    </div>
+</section>
+{% endblock %}
